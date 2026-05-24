@@ -94,9 +94,9 @@ int main(void)
   BLDC_Init();
   
   /* Set motor parameters */
-  BLDC_SetSpeed(100);                // 100% speed
-  BLDC_SetDirection(0);              // Forward direction
-  BLDC_SetAngleIncrement(5);         // Angle increment per 100ms interrupt
+  BLDC_SetSpeed(100);              // 50% speed
+  BLDC_SetDirection(0);           // Forward direction
+  BLDC_SetCommutationPeriod(10);  // 50ms between commutations
   
   /* Enable motor */
   BLDC_Enable();
@@ -112,15 +112,10 @@ int main(void)
 
     /* USER CODE BEGIN 3 */
     
-    /* Example: Modify angle increment to control motor speed
-     * Higher increment = faster speed
+    /* Example: Control motor speed via commutation period
+     * Shorter period = higher speed, Longer period = lower speed
      */
-    HAL_Delay(1000);
-    
-    // Optional: Change speed every second
-    // BLDC_SetAngleIncrement(3);  // Slower
-    // HAL_Delay(1000);
-    // BLDC_SetAngleIncrement(10);  // Faster
+    HAL_Delay(100);
   }
   /* USER CODE END 3 */
 }

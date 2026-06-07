@@ -1,9 +1,9 @@
 /* USER CODE BEGIN Header */
 /**
   ******************************************************************************
-  * @file    opamp.h
+  * @file    adc.h
   * @brief   This file contains all the function prototypes for
-  *          the opamp.c file
+  *          the adc.c file
   ******************************************************************************
   * @attention
   *
@@ -18,8 +18,8 @@
   */
 /* USER CODE END Header */
 /* Define to prevent recursive inclusion -------------------------------------*/
-#ifndef __OPAMP_H__
-#define __OPAMP_H__
+#ifndef __ADC_H__
+#define __ADC_H__
 
 #ifdef __cplusplus
 extern "C" {
@@ -32,25 +32,21 @@ extern "C" {
 
 /* USER CODE END Includes */
 
-extern OPAMP_HandleTypeDef hopamp1;
+extern ADC_HandleTypeDef hadc1;
 
-extern OPAMP_HandleTypeDef hopamp2;
+extern ADC_HandleTypeDef hadc2;
 
-extern OPAMP_HandleTypeDef hopamp3;
+extern ADC_HandleTypeDef hadc3;
 
 /* USER CODE BEGIN Private defines */
 
 /* USER CODE END Private defines */
 
-void MX_OPAMP1_Init(void);
-void MX_OPAMP2_Init(void);
-void MX_OPAMP3_Init(void);
+void MX_ADC1_Init(void);
+void MX_ADC2_Init(void);
+void MX_ADC3_Init(void);
 
 /* USER CODE BEGIN Prototypes */
-void OPAMP_SENSOR_Init(void);
-uint16_t OPAMP1_ReadSensorValue(void);
-uint16_t OPAMP1_ConvertToVoltage(uint16_t adc_value);
-
 
 /* USER CODE END Prototypes */
 
@@ -58,5 +54,5 @@ uint16_t OPAMP1_ConvertToVoltage(uint16_t adc_value);
 }
 #endif
 
-#endif /* __OPAMP_H__ */
+#endif /* __ADC_H__ */
 

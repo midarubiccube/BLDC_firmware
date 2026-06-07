@@ -33,12 +33,7 @@ static void BLDC_SetPWMOutput(uint16_t channel, uint16_t duty);
   */
 void BLDC_Init(void)
 {
-    /* Initialize Timer 3 for PWM output (CH1, CH2, CH4) */
-    HAL_TIM_PWM_Start(&htim3, TIM_CHANNEL_1);
-    HAL_TIM_PWM_Start(&htim3, TIM_CHANNEL_2);
-    HAL_TIM_PWM_Start(&htim3, TIM_CHANNEL_4);
-    
-    /* Initialize Timer 6 for commutation timing */
+       /* Initialize Timer 6 for commutation timing */
     HAL_TIM_Base_Start_IT(&htim6);
     
     /* Set initial commutation state */

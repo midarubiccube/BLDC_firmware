@@ -18,6 +18,8 @@
 /* USER CODE END Header */
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
+#include "adc.h"
+#include "dma.h"
 #include "fdcan.h"
 #include "i2c.h"
 #include "opamp.h"
@@ -43,6 +45,9 @@
 
 /* Private macro -------------------------------------------------------------*/
 /* USER CODE BEGIN PM */
+#define ADC_BUF_SIZE 100
+static uint32_t dma_adc_buf[3 * ADC_BUF_SIZE];  // 3 ADCs x ADC_BUF_SIZE
+static volatile uint32_t adc_buf_idx = 0;
 
 /* USER CODE END PM */
 
@@ -60,10 +65,39 @@ void SystemClock_Config(void);
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
+static volatile uint32_t adc_values[3] = {0, 0, 0};
 
-/* BLDC Motor Control Application Example */
+void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef* hadc) {
+	if (hadc == &hadc1) {
+		adc_values[0] = dma_adc_buf[adc_buf_idx];
+	}
+	else if (hadc == &hadc2) {
+		adc_values[1] = dma_adc_buf[ADC_BUF_SIZE + adc_buf_idx];
+	}
+	else if (hadc == &hadc3) {
+		adc_values[2] = dma_adc_buf[2*ADC_BUF_SIZE + adc_buf_idx];
+	}
+	adc_buf_idx = (adc_buf_idx + 1) % ADC_BUF_SIZE;
+}
+
+int _write(int file, char *ptr, int len)
+{
+  HAL_UART_Transmit(&huart4,(uint8_t *)ptr,len,10);
+  return len;
+}
+/* USER CODE END 0 */
+
+/**
+  * @brief  The application entry point.
+  * @retval int
+  */
 int main(void)
 {
+
+  /* USER CODE BEGIN 1 */
+
+  /* USER CODE END 1 */
+
   /* MCU Configuration--------------------------------------------------------*/
 
   /* Reset of all peripherals, Initializes the Flash interface and the Systick. */
@@ -82,25 +116,45 @@ int main(void)
 
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
-  MX_TIM1_Init();
+  MX_DMA_Init();
   MX_TIM3_Init();
+  MX_OPAMP1_Init();
+  MX_OPAMP2_Init();
+  MX_OPAMP3_Init();
+  MX_TIM1_Init();
   MX_TIM4_Init();
-  MX_TIM6_Init();
+  MX_FDCAN2_Init();
   MX_TIM8_Init();
-
+  MX_I2C3_Init();
+  MX_UART4_Init();
+  MX_TIM6_Init();
+  MX_ADC1_Init();
+  MX_ADC2_Init();
+  MX_ADC3_Init();
   /* USER CODE BEGIN 2 */
   HAL_GPIO_WritePin(GPIOB, GPIO_PIN_11, GPIO_PIN_SET); // Example: Turn off onboard LED
+  HAL_OPAMP_SelfCalibrate(&hopamp1);
+	HAL_OPAMP_SelfCalibrate(&hopamp2);
+	HAL_OPAMP_SelfCalibrate(&hopamp3);
+  HAL_ADCEx_Calibration_Start(&hadc1, ADC_SINGLE_ENDED);
+	HAL_ADCEx_Calibration_Start(&hadc2, ADC_SINGLE_ENDED);
+  HAL_ADCEx_Calibration_Start(&hadc3, ADC_SINGLE_ENDED);
+  HAL_ADC_Start(&hadc1);
+	HAL_ADC_Start(&hadc2);
+	HAL_ADC_Start(&hadc3);
+  HAL_OPAMP_Start(&hopamp1);
+  HAL_OPAMP_Start(&hopamp2);
+  HAL_OPAMP_Start(&hopamp3);
+
+  HAL_TIM_PWM_Start(&htim3, TIM_CHANNEL_1);
+  HAL_TIM_PWM_Start(&htim3, TIM_CHANNEL_2);
+  HAL_TIM_PWM_Start(&htim3, TIM_CHANNEL_4);
   /* Initialize BLDC Controller */
-  BLDC_Init();
-  
+
   /* Set motor parameters */
-  BLDC_SetSpeed(100);              // 50% speed
-  BLDC_SetDirection(0);           // Forward direction
-  BLDC_SetCommutationPeriod(10);  // 50ms between commutations
   
   /* Enable motor */
-  BLDC_Enable();
-
+  __HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_4, 500);
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -108,9 +162,23 @@ int main(void)
   while (1)
   {
     /*
-    //* USER CODE END WHILE */
+    /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
+    
+    HAL_ADC_Start(&hadc1);
+    HAL_ADC_PollForConversion(&hadc1, 1000);
+    HAL_ADC_Stop(&hadc1);
+
+    HAL_ADC_Start(&hadc2);
+    HAL_ADC_PollForConversion(&hadc2,1000);
+    HAL_ADC_Stop(&hadc2);
+
+    HAL_ADC_Start(&hadc3);
+    HAL_ADC_PollForConversion(&hadc3,1000);
+    HAL_ADC_Stop(&hadc3);
+    /* Display OPAMP sense values via ADC */
+    printf("OPAMP1: %lu, OPAMP2: %lu, OPAMP3: %lu\r\n", HAL_ADC_GetValue(&hadc1), HAL_ADC_GetValue(&hadc2), HAL_ADC_GetValue(&hadc3));
     
     /* Example: Control motor speed via commutation period
      * Shorter period = higher speed, Longer period = lower speed
@@ -119,13 +187,6 @@ int main(void)
   }
   /* USER CODE END 3 */
 }
-
-/* USER CODE END 0 */
-
-/**
-  * @brief  The application entry point.
-  * @retval int
-  */
 
 /**
   * @brief System Clock Configuration

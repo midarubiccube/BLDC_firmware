@@ -30,6 +30,9 @@
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 #include "bldc_controller.h"
+#include <stdint.h>
+#include <stdio.h>
+#include <stdlib.h>
 
 /* USER CODE END Includes */
 
@@ -48,6 +51,9 @@
 #define ADC_BUF_SIZE 100
 static uint32_t dma_adc_buf[3 * ADC_BUF_SIZE];  // 3 ADCs x ADC_BUF_SIZE
 static volatile uint32_t adc_buf_idx = 0;
+uint32_t hadc1_values = 0;
+uint32_t hadc2_values = 0;
+uint32_t hadc3_values = 0;
 
 /* USER CODE END PM */
 
@@ -154,7 +160,10 @@ int main(void)
   /* Set motor parameters */
   
   /* Enable motor */
-  __HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_4, 500);
+  if (HAL_TIM_Encoder_Start(&htim4, TIM_CHANNEL_ALL) != HAL_OK) {
+    // エラー発生時の処理
+    Error_Handler();
+  }
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -168,18 +177,23 @@ int main(void)
     
     HAL_ADC_Start(&hadc1);
     HAL_ADC_PollForConversion(&hadc1, 1000);
+    hadc1_values = HAL_ADC_GetValue(&hadc1);
     HAL_ADC_Stop(&hadc1);
 
     HAL_ADC_Start(&hadc2);
     HAL_ADC_PollForConversion(&hadc2,1000);
+    hadc2_values = HAL_ADC_GetValue(&hadc2);  
     HAL_ADC_Stop(&hadc2);
 
     HAL_ADC_Start(&hadc3);
     HAL_ADC_PollForConversion(&hadc3,1000);
+    hadc3_values = HAL_ADC_GetValue(&hadc3);
     HAL_ADC_Stop(&hadc3);
     /* Display OPAMP sense values via ADC */
-    printf("OPAMP1: %lu, OPAMP2: %lu, OPAMP3: %lu\r\n", HAL_ADC_GetValue(&hadc1), HAL_ADC_GetValue(&hadc2), HAL_ADC_GetValue(&hadc3));
-    
+    int16_t encoder_count = __HAL_TIM_GET_COUNTER(&htim4);
+    __HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_4, abs(encoder_count)/4);
+    printf("encoder: %d, ADC1: %lu, ADC2: %lu, ADC3: %lu\r\n", encoder_count, hadc1_values, hadc2_values, hadc3_values);
+
     /* Example: Control motor speed via commutation period
      * Shorter period = higher speed, Longer period = lower speed
      */

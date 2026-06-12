@@ -33,6 +33,7 @@
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <math.h>
 
 /* USER CODE END Includes */
 
@@ -48,48 +49,104 @@
 
 /* Private macro -------------------------------------------------------------*/
 /* USER CODE BEGIN PM */
-#define ADC_BUF_SIZE 100
-static uint32_t dma_adc_buf[3 * ADC_BUF_SIZE];  // 3 ADCs x ADC_BUF_SIZE
-static volatile uint32_t adc_buf_idx = 0;
-uint32_t hadc1_values = 0;
-uint32_t hadc2_values = 0;
-uint32_t hadc3_values = 0;
+#define ADC_FULL_SCALE_COUNTS 4095.0f
+#define ADC_REFERENCE_VOLTAGE 3.3f
+#define SHUNT_RESISTANCE_OHMS 0.01f
+#define OPAMP_GAIN 64.0f
+
+static volatile uint16_t raw_currents[2];
+static uint32_t dma_adc_buf[3];
+static float adc_current_offsets[3] = {0.0f, 0.0f, 0.0f};
+static volatile uint8_t adc2_rank_index = 0;
+
 
 /* USER CODE END PM */
 
 /* Private variables ---------------------------------------------------------*/
 
 /* USER CODE BEGIN PV */
+static uint32_t irq_cnt = 0;
 
-/* USER CODE END PV */
+void disable_irq_nest() {
+	if (irq_cnt == 0) __disable_irq();
+	if (irq_cnt < UINT32_MAX) irq_cnt++;
+}
 
-/* Private function prototypes -----------------------------------------------*/
-void SystemClock_Config(void);
-/* USER CODE BEGIN PFP */
-
-/* USER CODE END PFP */
-
-/* Private user code ---------------------------------------------------------*/
-/* USER CODE BEGIN 0 */
-static volatile uint32_t adc_values[3] = {0, 0, 0};
-
-void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef* hadc) {
-	if (hadc == &hadc1) {
-		adc_values[0] = dma_adc_buf[adc_buf_idx];
-	}
-	else if (hadc == &hadc2) {
-		adc_values[1] = dma_adc_buf[ADC_BUF_SIZE + adc_buf_idx];
-	}
-	else if (hadc == &hadc3) {
-		adc_values[2] = dma_adc_buf[2*ADC_BUF_SIZE + adc_buf_idx];
-	}
-	adc_buf_idx = (adc_buf_idx + 1) % ADC_BUF_SIZE;
+void enable_irq_nest() {
+	if (irq_cnt > 0) irq_cnt--;
+	if (irq_cnt == 0) __enable_irq();
 }
 
 int _write(int file, char *ptr, int len)
 {
   HAL_UART_Transmit(&huart4,(uint8_t *)ptr,len,10);
   return len;
+}
+
+/* USER CODE END PV */
+
+/* Private function prototypes -----------------------------------------------*/
+void SystemClock_Config(void);
+/* USER CODE BEGIN PFP */
+#define PWM_PERIOD_COUNTS 4250.0f
+/* USER CODE END PFP */
+
+/* Private user code ---------------------------------------------------------*/
+/* USER CODE BEGIN 0 */
+
+void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef* hadc) {
+	if (hadc == &hadc1) {
+		disable_irq_nest();
+		raw_currents[0] = (uint16_t)(dma_adc_buf[0] & 0xFFFF);
+		raw_currents[1] = (uint16_t)((dma_adc_buf[0]>>16) & 0xFFFF);
+		raw_currents[2] = (uint16_t)((dma_adc_buf[1]) & 0xFFFF);
+		enable_irq_nest();
+	}
+}
+
+static float ADC_CountsToCurrentmA(uint16_t adc_value, float offset_counts)
+{
+  float corrected_counts = (float)adc_value - offset_counts;
+  float shunt_voltage = (corrected_counts * ADC_REFERENCE_VOLTAGE) / ADC_FULL_SCALE_COUNTS;
+  float input_voltage = shunt_voltage / OPAMP_GAIN;
+  return (input_voltage / SHUNT_RESISTANCE_OHMS) * 1000000.0f;
+}
+
+void FOC_SVPWM_Update(float V_alpha, float V_beta) {
+    
+    // 1. 逆Clarke変換 (alpha, beta -> U, V, W)
+    // Va = Valpha
+    // Vb = -0.5 * Valpha + (sqrt(3)/2) * Vbeta
+    // Vc = -0.5 * Valpha - (sqrt(3)/2) * Vbeta
+    
+    // sqrt(3)/2 = 0.8660254f
+    float Va = V_alpha;
+    float Vb = -0.5f * V_alpha + 0.8660254f * V_beta;
+    float Vc = -0.5f * V_alpha - 0.8660254f * V_beta;
+
+    // 2. Min-Max法によるSVPWM (コモンモード電圧の注入)
+    // 3相の中で一番大きい電圧と小さい電圧を見つける
+    float V_max = fmaxf(Va, fmaxf(Vb, Vc));
+    float V_min = fminf(Va, fminf(Vb, Vc));
+    
+    // 鞍型にするためのオフセット電圧
+    float V_common = -0.5f * (V_max + V_min);
+
+    // 3. オフセットを加算してデューティ比に変換
+    // 入力(-1.0~1.0) -> CCR(0~ARR)
+    // Center Alignedなので、duty 0.0 が中心、-1.0が0、+1.0がARRになるようにマップする
+    // 式: CCR = ( (V + V_common) + 1.0 ) * 0.5 * ARR
+    
+    // クリップ処理 (過変調防止)
+    // ※厳密には正規化が必要ですが、テストなので簡易リミッタで
+    float u_out = Va + V_common;
+    float v_out = Vb + V_common;
+    float w_out = Vc + V_common;
+    
+    // レジスタ書き込み
+    TIM3->CCR1 = (uint32_t)((u_out + 1.0f) * 0.5f * PWM_PERIOD_COUNTS);
+    TIM3->CCR2 = (uint32_t)((v_out + 1.0f) * 0.5f * PWM_PERIOD_COUNTS);
+    TIM3->CCR4 = (uint32_t)((w_out + 1.0f) * 0.5f * PWM_PERIOD_COUNTS);
 }
 /* USER CODE END 0 */
 
@@ -136,70 +193,69 @@ int main(void)
   MX_TIM6_Init();
   MX_ADC1_Init();
   MX_ADC2_Init();
-  MX_ADC3_Init();
   /* USER CODE BEGIN 2 */
   HAL_GPIO_WritePin(GPIOB, GPIO_PIN_11, GPIO_PIN_SET); // Example: Turn off onboard LED
+
+  HAL_ADCEx_Calibration_Start(&hadc1, ADC_SINGLE_ENDED);
+	HAL_ADCEx_Calibration_Start(&hadc2, ADC_SINGLE_ENDED);
   HAL_OPAMP_SelfCalibrate(&hopamp1);
 	HAL_OPAMP_SelfCalibrate(&hopamp2);
 	HAL_OPAMP_SelfCalibrate(&hopamp3);
-  HAL_ADCEx_Calibration_Start(&hadc1, ADC_SINGLE_ENDED);
-	HAL_ADCEx_Calibration_Start(&hadc2, ADC_SINGLE_ENDED);
-  HAL_ADCEx_Calibration_Start(&hadc3, ADC_SINGLE_ENDED);
-  HAL_ADC_Start(&hadc1);
-	HAL_ADC_Start(&hadc2);
-	HAL_ADC_Start(&hadc3);
+
   HAL_OPAMP_Start(&hopamp1);
   HAL_OPAMP_Start(&hopamp2);
   HAL_OPAMP_Start(&hopamp3);
 
+  /*__HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_1, 0);
+  __HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_2, 0);
+  __HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_4, 0);
+
   HAL_TIM_PWM_Start(&htim3, TIM_CHANNEL_1);
   HAL_TIM_PWM_Start(&htim3, TIM_CHANNEL_2);
   HAL_TIM_PWM_Start(&htim3, TIM_CHANNEL_4);
-  /* Initialize BLDC Controller */
 
-  /* Set motor parameters */
+  HAL_ADC_Start(&hadc2);
+	HAL_ADCEx_MultiModeStart_DMA(&hadc1, dma_adc_buf, 3);*/
+
+  // PWM出力開始 (相補出力CHxNも忘れずに)
+  HAL_TIM_PWM_Start(&htim3, TIM_CHANNEL_1);
+  HAL_TIM_PWM_Start(&htim3, TIM_CHANNEL_2);
+  HAL_TIM_PWM_Start(&htim3, TIM_CHANNEL_4);
   
-  /* Enable motor */
-  if (HAL_TIM_Encoder_Start(&htim4, TIM_CHANNEL_ALL) != HAL_OK) {
-    // エラー発生時の処理
-    Error_Handler();
-  }
+
+  // テスト用変数
+  float theta = 0.0f;
+  float voltage_amp = 0.1f; // 電圧振幅 0.8 (最大1.0だが安全マージン)
   /* USER CODE END 2 */
 
-  /* Infinite loop */
   /* USER CODE BEGIN WHILE */
   while (1)
   {
-    /*
-    /* USER CODE END WHILE */
-
     /* USER CODE BEGIN 3 */
     
-    HAL_ADC_Start(&hadc1);
-    HAL_ADC_PollForConversion(&hadc1, 1000);
-    hadc1_values = HAL_ADC_GetValue(&hadc1);
-    HAL_ADC_Stop(&hadc1);
+    // 1. 角度を進める (50Hz程度で回転)
+    theta += 1.0f; 
+    if (theta > 6.283185f) theta -= 6.283185f;
 
-    HAL_ADC_Start(&hadc2);
-    HAL_ADC_PollForConversion(&hadc2,1000);
-    hadc2_values = HAL_ADC_GetValue(&hadc2);  
-    HAL_ADC_Stop(&hadc2);
+    // 2. 電圧ベクトル生成 (逆Park変換の簡易版)
+    // 本来は Id, Iq から計算しますが、テストなので直接 Alpha, Beta を生成
+    float valpha = voltage_amp * cosf(theta);
+    float vbeta  = voltage_amp * sinf(theta);
 
-    HAL_ADC_Start(&hadc3);
-    HAL_ADC_PollForConversion(&hadc3,1000);
-    hadc3_values = HAL_ADC_GetValue(&hadc3);
-    HAL_ADC_Stop(&hadc3);
-    /* Display OPAMP sense values via ADC */
-    int16_t encoder_count = __HAL_TIM_GET_COUNTER(&htim4);
-    __HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_4, abs(encoder_count)/4);
-    printf("encoder: %d, ADC1: %lu, ADC2: %lu, ADC3: %lu\r\n", encoder_count, hadc1_values, hadc2_values, hadc3_values);
+    // 3. SVPWM実行
+    FOC_SVPWM_Update(valpha, vbeta);
 
-    /* Example: Control motor speed via commutation period
-     * Shorter period = higher speed, Longer period = lower speed
-     */
-    HAL_Delay(100);
+    // 4. 結果確認 (CCRレジスタの値をプロット)
+    // ExcelやSerialPlotterで波形を確認してください
+    printf("%.0f,%.0f,%.0f\r\n", 
+           (float)TIM3->CCR1, 
+           (float)TIM3->CCR2, 
+           (float)TIM3->CCR4);
+
+    HAL_Delay(1); // 適当なウェイト
   }
-  /* USER CODE END 3 */
+  /* USER CODE END 2 */
+
 }
 
 /**

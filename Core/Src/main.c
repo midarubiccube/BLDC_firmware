@@ -58,6 +58,7 @@ static volatile uint16_t raw_currents[2];
 static uint32_t dma_adc_buf[3];
 static float adc_current_offsets[3] = {0.0f, 0.0f, 0.0f};
 static volatile uint8_t adc2_rank_index = 0;
+static volatile int PWM[3] = {0, 0, 0};
 
 
 /* USER CODE END PM */
@@ -147,6 +148,10 @@ void FOC_SVPWM_Update(float V_alpha, float V_beta) {
     TIM3->CCR1 = (uint32_t)((u_out + 1.0f) * 0.5f * PWM_PERIOD_COUNTS);
     TIM3->CCR2 = (uint32_t)((v_out + 1.0f) * 0.5f * PWM_PERIOD_COUNTS);
     TIM3->CCR4 = (uint32_t)((w_out + 1.0f) * 0.5f * PWM_PERIOD_COUNTS);
+
+    TIM1->CCR1 = (uint32_t)((u_out + 1.0f) * 0.5f * PWM_PERIOD_COUNTS);
+    TIM1->CCR2 = (uint32_t)((v_out + 1.0f) * 0.5f * PWM_PERIOD_COUNTS);
+    TIM1->CCR4 = (uint32_t)((w_out + 1.0f) * 0.5f * PWM_PERIOD_COUNTS);
 }
 /* USER CODE END 0 */
 
@@ -206,21 +211,16 @@ int main(void)
   HAL_OPAMP_Start(&hopamp2);
   HAL_OPAMP_Start(&hopamp3);
 
-  /*__HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_1, 0);
-  __HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_2, 0);
-  __HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_4, 0);
-
-  HAL_TIM_PWM_Start(&htim3, TIM_CHANNEL_1);
-  HAL_TIM_PWM_Start(&htim3, TIM_CHANNEL_2);
-  HAL_TIM_PWM_Start(&htim3, TIM_CHANNEL_4);
-
   HAL_ADC_Start(&hadc2);
-	HAL_ADCEx_MultiModeStart_DMA(&hadc1, dma_adc_buf, 3);*/
+	HAL_ADCEx_MultiModeStart_DMA(&hadc1, dma_adc_buf, 2);
 
   // PWM出力開始 (相補出力CHxNも忘れずに)
   HAL_TIM_PWM_Start(&htim3, TIM_CHANNEL_1);
   HAL_TIM_PWM_Start(&htim3, TIM_CHANNEL_2);
   HAL_TIM_PWM_Start(&htim3, TIM_CHANNEL_4);
+  HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_1);
+  HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_2);
+  HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_3);
   
 
   // テスト用変数
@@ -228,13 +228,16 @@ int main(void)
   float voltage_amp = 0.1f; // 電圧振幅 0.8 (最大1.0だが安全マージン)
   /* USER CODE END 2 */
 
+  /* Infinite loop */
   /* USER CODE BEGIN WHILE */
   while (1)
   {
+    /* USER CODE END WHILE */
+
     /* USER CODE BEGIN 3 */
     
     // 1. 角度を進める (50Hz程度で回転)
-    theta += 1.0f; 
+    theta += 0.5f; 
     if (theta > 6.283185f) theta -= 6.283185f;
 
     // 2. 電圧ベクトル生成 (逆Park変換の簡易版)
@@ -247,15 +250,15 @@ int main(void)
 
     // 4. 結果確認 (CCRレジスタの値をプロット)
     // ExcelやSerialPlotterで波形を確認してください
-    printf("%.0f,%.0f,%.0f\r\n", 
-           (float)TIM3->CCR1, 
-           (float)TIM3->CCR2, 
-           (float)TIM3->CCR4);
+
+    PWM[0] = (int)TIM3->CCR1/100;
+    PWM[1] = (int)TIM3->CCR2/100;
+    PWM[2] = (int)TIM3->CCR4/100;
+    //printf("%.0d,%.0d,%.0d\r\n", PWM[0], PWM[1], PWM[2]);
 
     HAL_Delay(1); // 適当なウェイト
   }
-  /* USER CODE END 2 */
-
+  /* USER CODE END 3 */
 }
 
 /**

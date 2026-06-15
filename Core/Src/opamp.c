@@ -46,7 +46,7 @@ void MX_OPAMP1_Init(void)
   hopamp1.Init.InternalOutput = ENABLE;
   hopamp1.Init.TimerControlledMuxmode = OPAMP_TIMERCONTROLLEDMUXMODE_DISABLE;
   hopamp1.Init.PgaConnect = OPAMP_PGA_CONNECT_INVERTINGINPUT_IO0_BIAS;
-  hopamp1.Init.PgaGain = OPAMP_PGA_GAIN_64_OR_MINUS_63;
+  hopamp1.Init.PgaGain = OPAMP_PGA_GAIN_16_OR_MINUS_15;
   hopamp1.Init.UserTrimming = OPAMP_TRIMMING_FACTORY;
   if (HAL_OPAMP_Init(&hopamp1) != HAL_OK)
   {
@@ -71,7 +71,7 @@ void MX_OPAMP2_Init(void)
   hopamp2.Instance = OPAMP2;
   hopamp2.Init.PowerMode = OPAMP_POWERMODE_NORMALSPEED;
   hopamp2.Init.Mode = OPAMP_PGA_MODE;
-  hopamp2.Init.NonInvertingInput = OPAMP_NONINVERTINGINPUT_IO1;
+  hopamp2.Init.NonInvertingInput = OPAMP_NONINVERTINGINPUT_IO0;
   hopamp2.Init.InternalOutput = ENABLE;
   hopamp2.Init.TimerControlledMuxmode = OPAMP_TIMERCONTROLLEDMUXMODE_DISABLE;
   hopamp2.Init.PgaConnect = OPAMP_PGA_CONNECT_INVERTINGINPUT_IO0_BIAS;
@@ -147,20 +147,14 @@ void HAL_OPAMP_MspInit(OPAMP_HandleTypeDef* opampHandle)
   /* USER CODE END OPAMP2_MspInit 0 */
 
     __HAL_RCC_GPIOA_CLK_ENABLE();
-    __HAL_RCC_GPIOB_CLK_ENABLE();
     /**OPAMP2 GPIO Configuration
     PA5     ------> OPAMP2_VINM0
-    PB14     ------> OPAMP2_VINP
+    PA7     ------> OPAMP2_VINP
     */
-    GPIO_InitStruct.Pin = GPIO_PIN_5;
+    GPIO_InitStruct.Pin = GPIO_PIN_5|GPIO_PIN_7;
     GPIO_InitStruct.Mode = GPIO_MODE_ANALOG;
     GPIO_InitStruct.Pull = GPIO_NOPULL;
     HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
-
-    GPIO_InitStruct.Pin = GPIO_PIN_14;
-    GPIO_InitStruct.Mode = GPIO_MODE_ANALOG;
-    GPIO_InitStruct.Pull = GPIO_NOPULL;
-    HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
 
   /* USER CODE BEGIN OPAMP2_MspInit 1 */
 
@@ -215,11 +209,9 @@ void HAL_OPAMP_MspDeInit(OPAMP_HandleTypeDef* opampHandle)
 
     /**OPAMP2 GPIO Configuration
     PA5     ------> OPAMP2_VINM0
-    PB14     ------> OPAMP2_VINP
+    PA7     ------> OPAMP2_VINP
     */
-    HAL_GPIO_DeInit(GPIOA, GPIO_PIN_5);
-
-    HAL_GPIO_DeInit(GPIOB, GPIO_PIN_14);
+    HAL_GPIO_DeInit(GPIOA, GPIO_PIN_5|GPIO_PIN_7);
 
   /* USER CODE BEGIN OPAMP2_MspDeInit 1 */
 

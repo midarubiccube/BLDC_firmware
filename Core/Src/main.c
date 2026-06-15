@@ -54,8 +54,8 @@
 #define SHUNT_RESISTANCE_OHMS 0.01f
 #define OPAMP_GAIN 64.0f
 
-static volatile uint16_t raw_currents[2];
-static uint32_t dma_adc_buf[3];
+static volatile uint16_t raw_currents[3];
+static uint32_t dma_adc_buf[2];
 static float adc_current_offsets[3] = {0.0f, 0.0f, 0.0f};
 static volatile uint8_t adc2_rank_index = 0;
 static volatile int PWM[3] = {0, 0, 0};
@@ -99,8 +99,8 @@ void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef* hadc) {
 	if (hadc == &hadc1) {
 		disable_irq_nest();
 		raw_currents[0] = (uint16_t)(dma_adc_buf[0] & 0xFFFF);
-		raw_currents[1] = (uint16_t)((dma_adc_buf[0]>>16) & 0xFFFF);
-		raw_currents[2] = (uint16_t)((dma_adc_buf[1]) & 0xFFFF);
+		raw_currents[1] = (uint16_t)((dma_adc_buf[0] >> 16) & 0xFFFF);
+		raw_currents[2] = (uint16_t)((dma_adc_buf[1] >> 16) & 0xFFFF);
 		enable_irq_nest();
 	}
 }
@@ -211,7 +211,6 @@ int main(void)
   HAL_OPAMP_Start(&hopamp2);
   HAL_OPAMP_Start(&hopamp3);
 
-  HAL_ADC_Start(&hadc2);
 	HAL_ADCEx_MultiModeStart_DMA(&hadc1, dma_adc_buf, 2);
 
   // PWM出力開始 (相補出力CHxNも忘れずに)
@@ -250,11 +249,11 @@ int main(void)
 
     // 4. 結果確認 (CCRレジスタの値をプロット)
     // ExcelやSerialPlotterで波形を確認してください
-
+    
     PWM[0] = (int)TIM3->CCR1/100;
     PWM[1] = (int)TIM3->CCR2/100;
     PWM[2] = (int)TIM3->CCR4/100;
-    //printf("%.0d,%.0d,%.0d\r\n", PWM[0], PWM[1], PWM[2]);
+    //printf("%.0d,%.0d,%.0d\r\n", raw_currents[0], raw_currents[1], raw_currents[2 ]);
 
     HAL_Delay(1); // 適当なウェイト
   }

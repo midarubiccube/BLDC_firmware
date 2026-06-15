@@ -19,7 +19,6 @@
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
 #include "adc.h"
-#include "dma.h"
 #include "fdcan.h"
 #include "i2c.h"
 #include "opamp.h"
@@ -184,9 +183,7 @@ int main(void)
 
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
-  MX_DMA_Init();
   MX_TIM3_Init();
-  MX_OPAMP1_Init();
   MX_OPAMP2_Init();
   MX_OPAMP3_Init();
   MX_TIM1_Init();
@@ -198,11 +195,17 @@ int main(void)
   MX_TIM6_Init();
   MX_ADC1_Init();
   MX_ADC2_Init();
+  MX_OPAMP1_Init();
   /* USER CODE BEGIN 2 */
   HAL_GPIO_WritePin(GPIOB, GPIO_PIN_11, GPIO_PIN_SET); // Example: Turn off onboard LED
 
   HAL_ADCEx_Calibration_Start(&hadc1, ADC_SINGLE_ENDED);
 	HAL_ADCEx_Calibration_Start(&hadc2, ADC_SINGLE_ENDED);
+
+  HAL_OPAMP_Init(&hopamp1);
+  HAL_OPAMP_Init(&hopamp2);
+  HAL_OPAMP_Init(&hopamp3);
+  
   HAL_OPAMP_SelfCalibrate(&hopamp1);
 	HAL_OPAMP_SelfCalibrate(&hopamp2);
 	HAL_OPAMP_SelfCalibrate(&hopamp3);
@@ -212,8 +215,8 @@ int main(void)
   HAL_OPAMP_Start(&hopamp3);
 
   HAL_ADC_Start(&hadc2);
-	HAL_ADCEx_MultiModeStart_DMA(&hadc1, dma_adc_buf, 2);
-
+	//HAL_ADCEx_MultiModeStart_DMA(&hadc1, dma_adc_buf, 2);
+  HAL_ADC_Start(&hadc1);
   // PWM出力開始 (相補出力CHxNも忘れずに)
   HAL_TIM_PWM_Start(&htim3, TIM_CHANNEL_1);
   HAL_TIM_PWM_Start(&htim3, TIM_CHANNEL_2);
@@ -255,6 +258,9 @@ int main(void)
     PWM[1] = (int)TIM3->CCR2/100;
     PWM[2] = (int)TIM3->CCR4/100;
     //printf("%.0d,%.0d,%.0d\r\n", PWM[0], PWM[1], PWM[2]);
+    HAL_ADC_Start(&hadc1);
+    HAL_ADC_PollForConversion(&hadc1, 100);
+    printf("%lu\n", HAL_ADC_GetValue(&hadc1));
 
     HAL_Delay(1); // 適当なウェイト
   }

@@ -31,7 +31,9 @@ extern "C" {
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-
+#include "tim.h"
+#include "adc.h"
+#include "opamp.h"
 /* USER CODE END Includes */
 
 /* Exported types ------------------------------------------------------------*/

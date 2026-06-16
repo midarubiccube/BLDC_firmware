@@ -38,21 +38,26 @@ add_executable(${CMAKE_PROJECT_NAME})
 # Add STM32CubeMX generated sources
 add_subdirectory(cmake/stm32cubemx)
 
+set(Application_Src
+    main/main_app.c
+    main/FOC/FOC.c
+)
+
+set(Include_Dirs
+    ${CMAKE_SOURCE_DIR}/Core/driver
+    ${CMAKE_SOURCE_DIR}/main
+)
+
 # Link directories setup
 target_link_directories(${CMAKE_PROJECT_NAME} PRIVATE
     # Add user defined library search paths
 )
 
 # Add sources to executable
-target_sources(${CMAKE_PROJECT_NAME} PRIVATE
-    # Add user sources here
-    Core/Src/bldc_controller.c
-)
+target_sources(${CMAKE_PROJECT_NAME} PRIVATE ${Application_Src})
 
 # Add include paths
-target_include_directories(${CMAKE_PROJECT_NAME} PRIVATE
-    # Add user defined include paths
-)
+target_include_directories(${CMAKE_PROJECT_NAME} PRIVATE ${Include_Dirs})
 
 # Add project symbols (macros)
 target_compile_definitions(${CMAKE_PROJECT_NAME} PRIVATE

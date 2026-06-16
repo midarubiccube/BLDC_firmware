@@ -58,6 +58,7 @@
 extern DMA_HandleTypeDef hdma_adc1;
 extern ADC_HandleTypeDef hadc1;
 extern ADC_HandleTypeDef hadc2;
+extern CORDIC_HandleTypeDef hcordic;
 extern TIM_HandleTypeDef htim6;
 /* USER CODE BEGIN EV */
 
@@ -243,6 +244,20 @@ void TIM6_DAC_IRQHandler(void)
   /* USER CODE BEGIN TIM6_DAC_IRQn 1 */
 
   /* USER CODE END TIM6_DAC_IRQn 1 */
+}
+
+/**
+  * @brief This function handles CORDIC interrupt.
+  */
+void CORDIC_IRQHandler(void)
+{
+  /* USER CODE BEGIN CORDIC_IRQn 0 */
+
+  /* USER CODE END CORDIC_IRQn 0 */
+  HAL_CORDIC_IRQHandler(&hcordic);
+  /* USER CODE BEGIN CORDIC_IRQn 1 */
+
+  /* USER CODE END CORDIC_IRQn 1 */
 }
 
 /* USER CODE BEGIN 1 */

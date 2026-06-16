@@ -19,6 +19,7 @@
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
 #include "adc.h"
+#include "cordic.h"
 #include "dma.h"
 #include "fdcan.h"
 #include "i2c.h"
@@ -34,6 +35,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
+#include "main_app.h"
 
 /* USER CODE END Includes */
 
@@ -54,11 +56,7 @@
 #define SHUNT_RESISTANCE_OHMS 0.01f
 #define OPAMP_GAIN 64.0f
 
-static volatile uint16_t raw_currents[3];
-static uint32_t dma_adc_buf[2];
-static float adc_current_offsets[3] = {0.0f, 0.0f, 0.0f};
-static volatile uint8_t adc2_rank_index = 0;
-static volatile int PWM[3] = {0, 0, 0};
+
 
 
 /* USER CODE END PM */
@@ -66,17 +64,6 @@ static volatile int PWM[3] = {0, 0, 0};
 /* Private variables ---------------------------------------------------------*/
 
 /* USER CODE BEGIN PV */
-static uint32_t irq_cnt = 0;
-
-void disable_irq_nest() {
-	if (irq_cnt == 0) __disable_irq();
-	if (irq_cnt < UINT32_MAX) irq_cnt++;
-}
-
-void enable_irq_nest() {
-	if (irq_cnt > 0) irq_cnt--;
-	if (irq_cnt == 0) __enable_irq();
-}
 
 int _write(int file, char *ptr, int len)
 {
@@ -89,29 +76,10 @@ int _write(int file, char *ptr, int len)
 /* Private function prototypes -----------------------------------------------*/
 void SystemClock_Config(void);
 /* USER CODE BEGIN PFP */
-#define PWM_PERIOD_COUNTS 4250.0f
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
-
-void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef* hadc) {
-	if (hadc == &hadc1) {
-		disable_irq_nest();
-		raw_currents[0] = (uint16_t)(dma_adc_buf[0] & 0xFFFF);
-		raw_currents[1] = (uint16_t)((dma_adc_buf[0] >> 16) & 0xFFFF);
-		raw_currents[2] = (uint16_t)((dma_adc_buf[1] >> 16) & 0xFFFF);
-		enable_irq_nest();
-	}
-}
-
-static float ADC_CountsToCurrentmA(uint16_t adc_value, float offset_counts)
-{
-  float corrected_counts = (float)adc_value - offset_counts;
-  float shunt_voltage = (corrected_counts * ADC_REFERENCE_VOLTAGE) / ADC_FULL_SCALE_COUNTS;
-  float input_voltage = shunt_voltage / OPAMP_GAIN;
-  return (input_voltage / SHUNT_RESISTANCE_OHMS) * 1000000.0f;
-}
 
 void FOC_SVPWM_Update(float V_alpha, float V_beta) {
     
@@ -198,33 +166,11 @@ int main(void)
   MX_TIM6_Init();
   MX_ADC1_Init();
   MX_ADC2_Init();
+  MX_CORDIC_Init();
   /* USER CODE BEGIN 2 */
-  HAL_GPIO_WritePin(GPIOB, GPIO_PIN_11, GPIO_PIN_SET); // Example: Turn off onboard LED
-
-  HAL_ADCEx_Calibration_Start(&hadc1, ADC_SINGLE_ENDED);
-	HAL_ADCEx_Calibration_Start(&hadc2, ADC_SINGLE_ENDED);
-  HAL_OPAMP_SelfCalibrate(&hopamp1);
-	HAL_OPAMP_SelfCalibrate(&hopamp2);
-	HAL_OPAMP_SelfCalibrate(&hopamp3);
-
-  HAL_OPAMP_Start(&hopamp1);
-  HAL_OPAMP_Start(&hopamp2);
-  HAL_OPAMP_Start(&hopamp3);
-
-	HAL_ADCEx_MultiModeStart_DMA(&hadc1, dma_adc_buf, 2);
-
-  // PWM出力開始 (相補出力CHxNも忘れずに)
-  HAL_TIM_PWM_Start(&htim3, TIM_CHANNEL_1);
-  HAL_TIM_PWM_Start(&htim3, TIM_CHANNEL_2);
-  HAL_TIM_PWM_Start(&htim3, TIM_CHANNEL_4);
-  HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_1);
-  HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_2);
-  HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_3);
-  
-
-  // テスト用変数
+  main_setup();
   float theta = 0.0f;
-  float voltage_amp = 0.1f; // 電圧振幅 0.8 (最大1.0だが安全マージン)
+  float voltage_amp = 0.05f; // 電圧振幅 0.8 (最大1.0だが安全マージン)
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -236,7 +182,7 @@ int main(void)
     /* USER CODE BEGIN 3 */
     
     // 1. 角度を進める (50Hz程度で回転)
-    theta += 0.5f; 
+    theta += 0.1f; 
     if (theta > 6.283185f) theta -= 6.283185f;
 
     // 2. 電圧ベクトル生成 (逆Park変換の簡易版)
@@ -249,12 +195,6 @@ int main(void)
 
     // 4. 結果確認 (CCRレジスタの値をプロット)
     // ExcelやSerialPlotterで波形を確認してください
-    
-    PWM[0] = (int)TIM3->CCR1/100;
-    PWM[1] = (int)TIM3->CCR2/100;
-    PWM[2] = (int)TIM3->CCR4/100;
-    //printf("%.0d,%.0d,%.0d\r\n", raw_currents[0], raw_currents[1], raw_currents[2 ]);
-
     HAL_Delay(1); // 適当なウェイト
   }
   /* USER CODE END 3 */

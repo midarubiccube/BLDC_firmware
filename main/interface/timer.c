@@ -15,13 +15,8 @@ void init_timer(void) {
 
 void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
 	if (htim == &htim1) {
-		esc_callControlTask();
-	} else if (htim == &htim2) {
-		disable_irq_nest();
-		us_upper32++;
-		enable_irq_nest();
 	} else if (htim == &htim3) {
-		if (task_1kHz != NULL) task_1kHz();
+		
 	}
 }
 

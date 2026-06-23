@@ -15,3 +15,13 @@ void init_adc(void) {
 
 	HAL_ADCEx_MultiModeStart_DMA(&hadc1, dma_adc_buf, 2);
 }
+
+void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef* hadc) {
+	if (hadc == &hadc1) {
+		disable_irq_nest();
+		raw_currents[0] = (uint16_t)(dma_adc_buf[0] & 0xFFFF);
+		raw_currents[1] = (uint16_t)((dma_adc_buf[0] >> 16) & 0xFFFF);
+		raw_currents[2] = (uint16_t)((dma_adc_buf[1] >> 16) & 0xFFFF);
+		enable_irq_nest();
+	}
+}

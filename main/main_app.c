@@ -2,28 +2,15 @@
 
 #include "main.h"
 
+#include "interface/adc.h"
+#include "interface/timer.h"
+
 
 void main_setup(void){
     HAL_GPIO_WritePin(GPIOB, GPIO_PIN_11, GPIO_PIN_SET); // Example: Turn off onboard LED
-    HAL_ADCEx_Calibration_Start(&hadc1, ADC_SINGLE_ENDED);
-	HAL_ADCEx_Calibration_Start(&hadc2, ADC_SINGLE_ENDED);
 
-    HAL_OPAMP_SelfCalibrate(&hopamp1);
-	HAL_OPAMP_SelfCalibrate(&hopamp2);
-	HAL_OPAMP_SelfCalibrate(&hopamp3);
-
-    HAL_OPAMP_Start(&hopamp1);
-    HAL_OPAMP_Start(&hopamp2);
-    HAL_OPAMP_Start(&hopamp3);
-
-	HAL_ADCEx_MultiModeStart_DMA(&hadc1, dma_adc_buf, 2);
-
-    HAL_TIM_PWM_Start(&htim3, TIM_CHANNEL_1);
-    HAL_TIM_PWM_Start(&htim3, TIM_CHANNEL_2);
-    HAL_TIM_PWM_Start(&htim3, TIM_CHANNEL_4);
-    HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_1);
-    HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_2);
-    HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_3);
+	init_adc();
+	init_timer();
 
 	__HAL_TIM_SET_COMPARE (&htim3, TIM_CHANNEL_1, 0.5f * PWM_PERIOD_COUNTS);
 	__HAL_TIM_SET_COMPARE (&htim3, TIM_CHANNEL_2, 0.5f * PWM_PERIOD_COUNTS);
@@ -32,9 +19,8 @@ void main_setup(void){
 	__HAL_TIM_SET_COMPARE (&htim3, TIM_CHANNEL_1, 0);
 	__HAL_TIM_SET_COMPARE (&htim3, TIM_CHANNEL_2, 0);
 	__HAL_TIM_SET_COMPARE (&htim3, TIM_CHANNEL_4, 0);
-}
 
-void main_loop(void){}
+}
 
 void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef* hadc) {
 	if (hadc == &hadc1) {

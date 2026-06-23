@@ -172,7 +172,6 @@ int main(void)
   float theta = 0.0f;
   float voltage_amp = 0.05f; // 電圧振幅 0.8 (最大1.0だが安全マージン)
   /* USER CODE END 2 */
-
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
   while (1)

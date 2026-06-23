@@ -225,7 +225,7 @@ static void BLDC_SetPWMOutput(uint16_t channel, uint16_t duty)
   * @param  htim: Timer handle
   * @retval None
   */
-void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
+/*void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 {
     if (htim->Instance == TIM6) {
         commutation_counter++;
@@ -238,4 +238,4 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
             commutation_counter = 0;
         }
     }
-}
+}*/

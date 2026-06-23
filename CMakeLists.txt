@@ -41,6 +41,8 @@ add_subdirectory(cmake/stm32cubemx)
 set(Application_Src
     main/main_app.c
     main/FOC/FOC.c
+    main/interface/adc.c
+    main/interface/timer.c  
 )
 
 set(Include_Dirs

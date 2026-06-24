@@ -1,8 +1,13 @@
-#include "adc.h"
+#include "adc.h"	
+#include "FOC/FOC_calc.h"
+#include "timer.h"
 
 void disable_irq_nest();
 void enable_irq_nest();
 
+FOC_AB adc_currents_ab;
+float encoder_count = 0;
+#include "math.h"
 
 void init_adc(void) {
     HAL_ADCEx_Calibration_Start(&hadc1, ADC_SINGLE_ENDED);
@@ -37,5 +42,7 @@ void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef* hadc) {
 		raw_currents[2] = (uint16_t)((dma_adc_buf[1] >> 16) & 0xFFFF);
 		raw_currents[0] = (((raw_currents[1]-2200) + (raw_currents[2]-2200))*-1 + 2200);
 		enable_irq_nest();
+		adc_currents_ab = FOC_UVWtoAB(raw_currents[0] - adc_current_offsets[0], raw_currents[1] - adc_current_offsets[1], raw_currents[2] - adc_current_offsets[2]);
+		encoder_count = ((int16_t)(__HAL_TIM_GET_COUNTER(&htim4) - encoder_offset))/-4096.0;
 	}
 }

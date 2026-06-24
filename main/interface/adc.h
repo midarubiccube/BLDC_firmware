@@ -10,7 +10,7 @@ extern OPAMP_HandleTypeDef hopamp2;
 extern OPAMP_HandleTypeDef hopamp3;
 
 static volatile uint16_t raw_currents[3];
-static uint32_t dma_adc_buf[3];
-static float adc_current_offsets[3] = {0.0f, 0.0f, 0.0f};
+static volatile uint32_t dma_adc_buf[3];
+static float adc_current_offsets[3] = {2200.0f, 2200.0f, 2200.0f};
 
 void init_adc(void);

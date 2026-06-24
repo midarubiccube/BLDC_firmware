@@ -5,6 +5,7 @@
 
 #include "interface/adc.h"
 #include "interface/timer.h"
+#include "melody_defines.h"
 
 float theta = 0.0f;
 float voltage_amp = 0.05f; // 電圧振幅 0.8 (最大1.0だが安全マージン)
@@ -63,16 +64,22 @@ void main_setup(void){
 
 	init_adc();
 	init_timer();
-	set_timer_task(FOC_SVPWM_Update);
-	__HAL_TIM_SET_COMPARE (&htim3, TIM_CHANNEL_1, 0.5f * PWM_PERIOD_COUNTS);
-	__HAL_TIM_SET_COMPARE (&htim3, TIM_CHANNEL_2, 0.5f * PWM_PERIOD_COUNTS);
-	__HAL_TIM_SET_COMPARE (&htim3, TIM_CHANNEL_4, 0.5f * PWM_PERIOD_COUNTS +  10);
-	HAL_Delay(1); // 0.1秒待機
-	__HAL_TIM_SET_COMPARE (&htim3, TIM_CHANNEL_1, 0.5f * PWM_PERIOD_COUNTS);
-	__HAL_TIM_SET_COMPARE (&htim3, TIM_CHANNEL_2, 0.5f * PWM_PERIOD_COUNTS);
-	__HAL_TIM_SET_COMPARE (&htim3, TIM_CHANNEL_4, 0.5f * PWM_PERIOD_COUNTS);
+    /*set_control_task(melodyControlTask);
+	melody_freq = MELODY_C;
+	melody_volume = 1.0f;
+	HAL_Delay(50);
+	melody_freq = MELODY_D;
+	melody_volume = 1.0f;
+	HAL_Delay(50);
+	melody_freq = MELODY_G;
+	melody_volume = 1.0f;
+	HAL_Delay(50);
+	melody_volume = 0.0f;
+	HAL_Delay(50);*/
+	
 
 
+    set_control_task(FOC_SVPWM_Update);
 }
 
 

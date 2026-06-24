@@ -17,6 +17,16 @@ void init_adc(void) {
     HAL_OPAMP_Start(&hopamp3);
 
 	HAL_ADCEx_MultiModeStart_DMA(&hadc1, dma_adc_buf, 2);
+
+	HAL_Delay(100);
+    for (uint32_t i = 0; i < 100; i++) {
+    	disable_irq_nest();
+    	adc_current_offsets[0] += raw_currents[0] / 100.0f;
+    	adc_current_offsets[1] += raw_currents[1] / 100.0f;
+    	adc_current_offsets[2] += raw_currents[2] / 100.0f;
+    	enable_irq_nest();
+    	HAL_Delay(1);
+    }
 }
 
 void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef* hadc) {

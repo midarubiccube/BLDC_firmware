@@ -34,7 +34,6 @@
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <math.h>
 #include "main_app.h"
 
 /* USER CODE END Includes */
@@ -81,46 +80,6 @@ void SystemClock_Config(void);
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
 
-void FOC_SVPWM_Update(float V_alpha, float V_beta) {
-    
-    // 1. 逆Clarke変換 (alpha, beta -> U, V, W)
-    // Va = Valpha
-    // Vb = -0.5 * Valpha + (sqrt(3)/2) * Vbeta
-    // Vc = -0.5 * Valpha - (sqrt(3)/2) * Vbeta
-    
-    // sqrt(3)/2 = 0.8660254f
-    float Va = V_alpha;
-    float Vb = -0.5f * V_alpha + 0.8660254f * V_beta;
-    float Vc = -0.5f * V_alpha - 0.8660254f * V_beta;
-
-    // 2. Min-Max法によるSVPWM (コモンモード電圧の注入)
-    // 3相の中で一番大きい電圧と小さい電圧を見つける
-    float V_max = fmaxf(Va, fmaxf(Vb, Vc));
-    float V_min = fminf(Va, fminf(Vb, Vc));
-    
-    // 鞍型にするためのオフセット電圧
-    float V_common = -0.5f * (V_max + V_min);
-
-    // 3. オフセットを加算してデューティ比に変換
-    // 入力(-1.0~1.0) -> CCR(0~ARR)
-    // Center Alignedなので、duty 0.0 が中心、-1.0が0、+1.0がARRになるようにマップする
-    // 式: CCR = ( (V + V_common) + 1.0 ) * 0.5 * ARR
-    
-    // クリップ処理 (過変調防止)
-    // ※厳密には正規化が必要ですが、テストなので簡易リミッタで
-    float u_out = Va + V_common;
-    float v_out = Vb + V_common;
-    float w_out = Vc + V_common;
-    
-    // レジスタ書き込み
-    TIM3->CCR1 = (uint32_t)((u_out + 1.0f) * 0.5f * PWM_PERIOD_COUNTS);
-    TIM3->CCR2 = (uint32_t)((v_out + 1.0f) * 0.5f * PWM_PERIOD_COUNTS);
-    TIM3->CCR4 = (uint32_t)((w_out + 1.0f) * 0.5f * PWM_PERIOD_COUNTS);
-
-    TIM1->CCR1 = (uint32_t)((u_out + 1.0f) * 0.5f * PWM_PERIOD_COUNTS);
-    TIM1->CCR2 = (uint32_t)((v_out + 1.0f) * 0.5f * PWM_PERIOD_COUNTS);
-    TIM1->CCR4 = (uint32_t)((w_out + 1.0f) * 0.5f * PWM_PERIOD_COUNTS);
-}
 /* USER CODE END 0 */
 
 /**
@@ -180,22 +139,6 @@ int main(void)
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
-    
-    // 1. 角度を進める (50Hz程度で回転)
-    theta += 0.1f; 
-    if (theta > 6.283185f) theta -= 6.283185f;
-
-    // 2. 電圧ベクトル生成 (逆Park変換の簡易版)
-    // 本来は Id, Iq から計算しますが、テストなので直接 Alpha, Beta を生成
-    float valpha = voltage_amp * cosf(theta);
-    float vbeta  = voltage_amp * sinf(theta);
-
-    // 3. SVPWM実行
-    FOC_SVPWM_Update(valpha, vbeta);
-
-    // 4. 結果確認 (CCRレジスタの値をプロット)
-    // ExcelやSerialPlotterで波形を確認してください
-    HAL_Delay(1); // 適当なウェイト
   }
   /* USER CODE END 3 */
 }

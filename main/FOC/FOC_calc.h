@@ -22,4 +22,4 @@ void FOC_DQtoAB(const FOC_DQ *dq, float sin, float cos, FOC_AB *ab);
 void FOC_ABtoUVW(const FOC_AB *ab, FOC_UVW *uvw);
 
 FOC_AB FOC_UVWtoAB(float u, float v, float w);
-void FOC_ABtoDQ(const FOC_AB *ab, float sin, float cos, FOC_DQ *dq);
+FOC_DQ FOC_ABtoDQ(const FOC_AB *ab, float sin, float cos);

@@ -128,8 +128,6 @@ int main(void)
   MX_CORDIC_Init();
   /* USER CODE BEGIN 2 */
   main_setup();
-  float theta = 0.0f;
-  float voltage_amp = 0.05f; // 電圧振幅 0.8 (最大1.0だが安全マージン)
   /* USER CODE END 2 */
 
   /* Infinite loop */

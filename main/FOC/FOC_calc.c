@@ -16,9 +16,9 @@
 
 // 謎
 static const float UVW_UNIT_VECTOR[3][2] = {
-		{0.5f, 0.86602540378f},
-		{-1.0f, 0.0f},
-		{0.5f, -0.86602540378f}
+		{1.0f, 0.0f},
+		{-0.5f, 0.86602540378f},
+		{-0.5f, -0.86602540378f}
 };
 
 void FOC_DQtoAB(const FOC_DQ *dq, float sin, float cos, FOC_AB *ab) {
@@ -39,7 +39,9 @@ FOC_AB FOC_UVWtoAB(float u, float v, float w) {
 	return ab;
 }
 
-void FOC_ABtoDQ(const FOC_AB *ab, float sin, float cos, FOC_DQ *dq) {
-	dq->d = ab->a * cos + ab->b * sin;
-	dq->q = -ab->a * sin + ab->b * cos;
+FOC_DQ FOC_ABtoDQ(const FOC_AB *ab, float sin, float cos) {
+	FOC_DQ dq;
+	dq.d = ab->a * cos + ab->b * sin;
+	dq.q = -ab->a * sin + ab->b * cos;
+	return dq;
 }

@@ -8,10 +8,10 @@
 #include "melody_defines.h"
 
 float theta = 0.0f;
-float voltage_amp = 0.05f; // 電圧振幅 0.8 (最大1.0だが安全マージン)
+float voltage_amp = 0.07f; // 電圧振幅 0.8 (最大1.0だが安全マージン)
 
 void FOC_SVPWM_Update() {
-    theta += 0.01f; 
+    theta += 0.002f; 
     if (theta > 6.283185f) theta -= 6.283185f;
 
     // 2. 電圧ベクトル生成 (逆Park変換の簡易版)

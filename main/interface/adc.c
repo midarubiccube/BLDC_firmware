@@ -1,5 +1,8 @@
 #include "adc.h"
 
+void disable_irq_nest();
+void enable_irq_nest();
+
 
 void init_adc(void) {
     HAL_ADCEx_Calibration_Start(&hadc1, ADC_SINGLE_ENDED);
@@ -19,9 +22,10 @@ void init_adc(void) {
 void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef* hadc) {
 	if (hadc == &hadc1) {
 		disable_irq_nest();
-		raw_currents[0] = (uint16_t)(dma_adc_buf[0] & 0xFFFF);
+		//raw_currents[0] = (uint16_t)(dma_adc_buf[0] & 0xFFFF);
 		raw_currents[1] = (uint16_t)((dma_adc_buf[0] >> 16) & 0xFFFF);
 		raw_currents[2] = (uint16_t)((dma_adc_buf[1] >> 16) & 0xFFFF);
+		raw_currents[0] = (((raw_currents[1]-2200) + (raw_currents[2]-2200))*-1 + 2200);
 		enable_irq_nest();
 	}
 }

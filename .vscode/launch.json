@@ -17,13 +17,13 @@
             "interface": "swd",
             "serialNumber": "",        //Set ST-Link ID if you use multiple at the same time
             "runToEntryPoint": "main",
-            "svdFile": "C:/ST/STM32CubeCLT_1.21.0/STMicroelectronics_CMSIS_SVD/STM32G431.svd",
+            "svdFile": "C:/ST/STM32CubeCLT_1.17.0/STMicroelectronics_CMSIS_SVD/STM32G431.svd",
             "v1": false,               //Change it depending on ST Link version
-            "serverpath": "C:/ST/STM32CubeCLT_1.21.0/STLink-gdb-server/bin/ST-LINK_gdbserver",
-            "stm32cubeprogrammer":"C:/ST/STM32CubeCLT_1.21.0/STM32CubeProgrammer/bin",
-            "stlinkPath": "C:/ST/STM32CubeCLT_1.21.0/STLink-gdb-server/bin/ST-LINK_gdbserver",   
-            "armToolchainPath": "C:/ST/STM32CubeCLT_1.21.0/GNU-tools-for-STM32/bin",
-            "gdbPath":"C:/ST/STM32CubeCLT_1.21.0/GNU-tools-for-STM32/bin/arm-none-eabi-gdb",            
+            "serverpath": "C:/ST/STM32CubeCLT_1.17.0/STLink-gdb-server/bin/ST-LINK_gdbserver",
+            "stm32cubeprogrammer":"C:/ST/STM32CubeCLT_1.17.0/STM32CubeProgrammer/bin",
+            "stlinkPath": "C:/ST/STM32CubeCLT_1.17.0/STLink-gdb-server/bin/ST-LINK_gdbserver",   
+            "armToolchainPath": "C:/ST/STM32CubeCLT_1.17.0/GNU-tools-for-STM32/bin",
+            "gdbPath":"C:/ST/STM32CubeCLT_1.17.0/GNU-tools-for-STM32/bin/arm-none-eabi-gdb",            
             "serverArgs": [
                 "-m","0",
             ],
@@ -44,13 +44,13 @@
             "interface": "swd",
             "serialNumber": "",        //Set ST-Link ID if you use multiple at the same time
             "runToEntryPoint": "main",
-            "svdFile": "C:/ST/STM32CubeCLT_1.21.0/STMicroelectronics_CMSIS_SVD/STM32G474.svd",
+            "svdFile": "C:/ST/STM32CubeCLT_1.17.0/STMicroelectronics_CMSIS_SVD/STM32G474.svd",
             "v1": false,               //Change it depending on ST Link version
-            "serverpath": "C:/ST/STM32CubeCLT_1.21.0/STLink-gdb-server/bin/ST-LINK_gdbserver",
-            "stm32cubeprogrammer":"C:/ST/STM32CubeCLT_1.21.0/STM32CubeProgrammer/bin",
-            "stlinkPath": "C:/ST/STM32CubeCLT_1.21.0/STLink-gdb-server/bin/ST-LINK_gdbserver",   
-            "armToolchainPath": "C:/ST/STM32CubeCLT_1.21.0/GNU-tools-for-STM32/bin",
-            "gdbPath":"C:/ST/STM32CubeCLT_1.21.0/GNU-tools-for-STM32/bin/arm-none-eabi-gdb",            
+            "serverpath": "C:/ST/STM32CubeCLT_1.17.0/STLink-gdb-server/bin/ST-LINK_gdbserver",
+            "stm32cubeprogrammer":"C:/ST/STM32CubeCLT_1.17.0/STM32CubeProgrammer/bin",
+            "stlinkPath": "C:/ST/STM32CubeCLT_1.17.0/STLink-gdb-server/bin/ST-LINK_gdbserver",   
+            "armToolchainPath": "C:/ST/STM32CubeCLT_1.17.0/GNU-tools-for-STM32/bin",
+            "gdbPath":"C:/ST/STM32CubeCLT_1.17.0/GNU-tools-for-STM32/bin/arm-none-eabi-gdb",            
             "serverArgs": [
                 "-m","0",
             ],

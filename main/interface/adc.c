@@ -7,6 +7,7 @@ void enable_irq_nest();
 
 FOC_AB adc_currents_ab;
 FOC_DQ adc_currents_dq;
+
 float encoder_count = 0;
 float encoder_sin;
 float encoder_cos;

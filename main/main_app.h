@@ -2,7 +2,6 @@
 
 #include <stdint.h>
 
-#define PWM_PERIOD_COUNTS 4250.0f
 
 void main_setup(void);
 void main_loop(void);

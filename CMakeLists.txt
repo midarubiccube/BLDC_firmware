@@ -44,6 +44,8 @@ set(Application_Src
     main/interface/adc.c
     main/interface/timer.c
     main/melody.c
+    main/PID/pid.c
+    main/esc.c
 )
 
 set(Include_Dirs

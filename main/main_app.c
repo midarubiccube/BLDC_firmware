@@ -14,20 +14,21 @@ void main_setup(void){
 
 	init_adc();
 	init_timer();
-    /*set_control_task(melodyControlTask);
+    
+    set_control_task(melodyControlTask);
 	melody_freq = MELODY_C;
-	melody_volume = 1.0f;
-	HAL_Delay(50);
+	melody_volume = 0.5f;
+	HAL_Delay(200);
 	melody_freq = MELODY_D;
-	melody_volume = 1.0f;
-	HAL_Delay(50);
+	melody_volume = 0.5;
+	HAL_Delay(200);
 	melody_freq = MELODY_G;
-	melody_volume = 1.0f;
-	HAL_Delay(50);
+	melody_volume = 0.5f;
+	HAL_Delay(200);
 	melody_volume = 0.0f;
-	HAL_Delay(50);*/
+	HAL_Delay(200);
 	
-
+    motor_controller_setup();
     set_control_task(MotorControlTask);
 }
 

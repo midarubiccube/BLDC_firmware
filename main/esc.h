@@ -8,3 +8,4 @@ extern FOC_AB adc_currents_ab;
 extern FOC_DQ adc_currents_dq;
 
 void MotorControlTask();
+void motor_controller_setup();

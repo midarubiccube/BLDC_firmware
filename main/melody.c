@@ -21,15 +21,18 @@ FOC_DQ dq_current = {0};
 FOC_AB ab_current = {0};
 FOC_UVW uvw_current = {0};
 
-static uint32_t tick = 0;
+extern float encoder_sin;
+extern float encoder_cos;
 
 void melodyControlTask() {
+	static uint32_t tick = 0;
+
 	if (melody_freq < 1.0f) melody_freq = 1.0f;
 	if (melody_freq > 2000.0f) melody_freq = 2000.0f;
 	if (melody_volume > 1.0f) melody_volume = 1.0f;
 	if (melody_volume < 0.0f) melody_volume = 0.0f;
 
-	float period = 40000.0f / melody_freq;
+	float period = 20000.0f / melody_freq;
 	uint32_t cnt = tick - (uint32_t)((float)(uint32_t)((float)tick / period) * period);
 	if (cnt == 0) {
 		dq_out.d = melody_volume;
@@ -47,9 +50,10 @@ void melodyControlTask() {
 		dq_out.q /= norm;
 	}
 
-	FOC_DQtoAB(&dq_out, sin(0),0, &ab_out);
+	FOC_DQtoAB(&dq_out, encoder_sin, encoder_cos, &ab_out);
 	FOC_ABtoUVW(&ab_out, &uvw_out);
 	timer_setDuty(uvw_out.u, uvw_out.v, uvw_out.w);
 
 	tick++;
 }
+
